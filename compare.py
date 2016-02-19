@@ -26,8 +26,7 @@ def get_args():
     parser.add_argument(
         '--port', dest='port', action='store', default=9200, type=int,
         help='Port')
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 def runner(es, query, args):
@@ -46,9 +45,7 @@ def runner(es, query, args):
         r = es.search(index=args.index, body=query)
         results.append(r['took'])
 
-    results = sorted(results)
-
-    return np.array(results)
+    return np.array(sorted(results))
 
 
 if __name__ == '__main__':
