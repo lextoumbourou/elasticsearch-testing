@@ -1,13 +1,11 @@
 import argparse
 import logging
 import time
-import sys
 import json
 
 import numpy as np
 import matplotlib.pyplot as plt
 from elasticsearch import Elasticsearch
-
 
 
 def get_args():
@@ -34,20 +32,20 @@ def get_args():
 
 def runner(es, query, args):
     """
-    Start by clearing the cache. Then, run query until we hit or exceed ``time_in_secs``.
-    
-    Displays a plot of query time and returns some stats about them.
+    Clear cache, then run query serially until we hit ``run_time``.
+
+    Return a sorted list of results as Numpy array.
     """
     results = []
 
     es.indices.clear_cache(args.index)
-    
+
     time_start = time.time()
 
     while (time.time() - time_start) < args.run_time:
         r = es.search(index=args.index, body=query)
         results.append(r['took'])
-    
+
     results = sorted(results)
 
     return np.array(results)
