@@ -1,8 +1,6 @@
 # Elasticsearch Testing
 
-## WIP
-
-A bunch of tools for testing Elasticsearch query performance.
+A bunch of tools for testing Elasticsearch query performance (WIP).
 
 ## loader.py
 
