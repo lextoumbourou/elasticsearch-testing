@@ -1,17 +1,21 @@
 # Elasticsearch Testing
 
-A bunch of tools for testing Elasticsearch query performance (WIP).
+A bunch of tools for testing Elasticsearch query performance. There are many like it, but this one is mine.
 
-## loader.py
+## load.py
 
-Indexes the Wikipedia dataset into Elasticsearch. Requires about 13G of disk space.
+Indexes the English Wikipedia dataset into Elasticsearch. Requires about 13G of disk space.
+
+```
+python load.py
+```
 
 ## compare.py
 
 Used to compare multiple queries. For example:
 
 ```
-compare.py query_1.json query_2.json --run-time=1800
+python compare.py example_queries/match_query.json example_queries/phrase_query.json --run-time=1800
 ```
 
-Outputs the median, max and min of both queries, plus a graph with both times plotted (sorted min to max)
+Outputs the median, max and min of both queries, plus a graph with both times plotted (sorted min to max).
