@@ -1,0 +1,21 @@
+{
+  "query": {
+    "match": {
+      "text": "one small step for a man, one giant leap for mankind"
+    }
+  },
+  "rescore": {
+    "window_size": 50,
+    "query": {
+      "rescore_query" : {
+        "match_phrase": {
+          "text": {
+	    "query": "running the risk",
+          }
+        }
+      },
+      "query_weight" : 0.7,
+      "rescore_query_weight" : 1.2
+    }
+  }
+}
