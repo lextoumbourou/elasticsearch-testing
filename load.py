@@ -1,8 +1,9 @@
+import argparse
 import sys
 import time
 import bz2
 import logging
-from xml.etree.cElementTree import iterparse
+import xml.etree.ElementTree as ET
 
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
@@ -10,54 +11,80 @@ from elasticsearch.helpers import bulk
 
 logging.basicConfig(level=logging.INFO)
 
+def get_args():
+    parser = argparse.ArgumentParser(
+        description=(
+            'Load Wikipedia dataset into Elasticsearch.'))
+    parser.add_argument(
+        'path_to_dataset', metavar='path_to_dataset', type=str,
+        help='Path to Wikipedia dataset.')
+    parser.add_argument(
+        '--max-items', dest='max_items', action='store', default=None,
+        help='Maximum number of items to fetch.')
+    parser.add_argument(
+        '--index', dest='index', action='store', required=True,
+        help='Index to perform query against.')
+    parser.add_argument(
+        '--host', dest='host', action='store', default='localhost', type=str,
+        help='Host')
+    parser.add_argument(
+        '--port', dest='port', action='store', default=9200, type=int,
+        help='Port')
+    return parser.parse_args()
 
-def load_wiki(dump, max_items=None):
+
+def load_wiki(dump, args):
     found = 0
-    for event, elem in iterparse(dump):
-        if elem.tag == '{http://www.mediawiki.org/xml/export-0.10/}page':
+    for event, elem in ET.iterparse(dump, events=('start','end')):
+        if event == 'start':
+            if elem.tag == '{http://www.mediawiki.org/xml/export-0.10/}page':
+                output_text = None
+                found += 1
 
-            found += 1
+                title = elem.find(
+                    '{http://www.mediawiki.org/xml/export-0.10/}title')
+                if title is None:
+                    continue
 
-            title = elem.find(
-                '{http://www.mediawiki.org/xml/export-0.10/}title').text
-            page_id = elem.find(
-                '{http://www.mediawiki.org/xml/export-0.10/}id').text
-            output_text = None
-            revision = elem.find(
-                '{http://www.mediawiki.org/xml/export-0.10/}revision')
-            if revision:
-                text = revision.find(
-                    '{http://www.mediawiki.org/xml/export-0.10/}text')
-                output_text = text.text
+                title_text = title.text
 
-            yield dict(
-                _id=page_id, title=title, text=output_text,
-                _index='wiki-test', _type='page')
+                page_id = elem.find(
+                    '{http://www.mediawiki.org/xml/export-0.10/}id')
+                if page_id is None:
+                    continue
 
-            if max_items and found >= max_items:
-                print("Found max item {0}".format(max_items))
-                return
+                page_id_text = page_id.text
 
-        elem.clear()
+                revision = elem.find(
+                    '{http://www.mediawiki.org/xml/export-0.10/}revision')
+                if revision is not None:
+                    text = revision.find(
+                        '{http://www.mediawiki.org/xml/export-0.10/}text')
+                    if text is not None:
+                        output_text = text.text
+
+                    yield dict(
+                        _id=page_id_text, title=title_text, text=output_text,
+                        _index=args.index, _type='page')
+
+                    if args.max_items and found >= args.max_items:
+                        print("Found max item {0}".format(args.max_items))
+                        return
+        else:
+            elem.clear()
 
 
 if __name__ == '__main__':
-    try:
-        file_path = sys.argv[1]
-    except IndexError:
-        logging.error('First argument should be file path.')
-        sys.exit(1)
+    logging.basicConfig(level=logging.INFO)
 
-    try:
-        max_items = sys.argv[2]
-    except IndexError:
-        max_items = None
+    args = get_args()
 
     start = time.time()
 
-    es = Elasticsearch()
-    es.indices.delete('wiki-test', ignore=404)
-    es.indices.create('wiki-test', {
+    es = Elasticsearch(
+        ['{host}:{port}'.format(host=args.host, port=args.port)])
+    es.indices.delete(args.index, ignore=404)
+    es.indices.create(args.index, {
         'settings': {
             'number_of_shards': 1
         },
@@ -75,6 +102,6 @@ if __name__ == '__main__':
         }
     })
 
-    print("Start index")
-    bulk(es, load_wiki(bz2.BZ2File(file_path), max_items))
-    print("Total time to index: {0}".format(time.time() - start))
+    logging.info("Start index")
+    bulk(es, load_wiki(bz2.BZ2File(args.path_to_dataset), args))
+    logging.info("Total time to index: {0}".format(time.time() - start))
