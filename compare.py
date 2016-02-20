@@ -2,6 +2,7 @@ import argparse
 import logging
 import time
 import json
+from datetime import datetime
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -72,4 +73,6 @@ if __name__ == '__main__':
 
     plt.legend(legend, loc='upper left')
 
-    plt.show()
+    filename = 'es-query-test-{0}.png'.format(datetime.now().isoformat())
+    logging.info('Saving results to output file: {0}'.format(filename))
+    plt.savefig(filename)

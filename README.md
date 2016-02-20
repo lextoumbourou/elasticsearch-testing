@@ -15,7 +15,7 @@ python load.py
 Used to compare multiple queries. For example:
 
 ```
-python compare.py example_queries/match_query.json example_queries/phrase_query.json --run-time=1800
+python compare.py example_queries/match_query.json example_queries/phrase_query.json --run-time=1800 --index=wiki-test
 ```
 
 Outputs the median, max and min of both queries, plus a graph with both times plotted (sorted min to max).
