@@ -9,8 +9,6 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 
 
-logging.basicConfig(level=logging.INFO)
-
 def get_args():
     parser = argparse.ArgumentParser(
         description=(
